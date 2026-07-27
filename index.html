@@ -202,6 +202,10 @@
         <div class="param-label"><span>运动速度</span><span class="param-value" id="val-speed">1.0x</span></div>
         <input type="range" id="speed" min="0.2" max="3" value="1" step="0.1">
       </div>
+      <div class="param-item">
+        <div class="param-label"><span>聚合程度</span><span class="param-value" id="val-cohesion">50%</span></div>
+        <input type="range" id="cohesion" min="0" max="1" value="0.5" step="0.05">
+      </div>
     </div>
 
     <div class="divider"></div>
@@ -257,6 +261,7 @@ const cfg = {
   count: 2000,
   size: 5,
   speed: 1,
+  cohesion: 0.5,
   trailLen: 1,
   idleMode: 'edge',
   color1: '#7afcff',
@@ -341,18 +346,19 @@ class Particle {
   }
   update() {
     const s = cfg.speed;
+    const om = 0.3 + (1 - cfg.cohesion) * 1.4;  // 聚合程度→偏移倍数（0.5时=1.0）
     let tx = this.target.x, ty = this.target.y;
     if (cfg.idleMode === 'float') {
-      tx += sin(t * 1.6 * s + this.phase) * (3 * s);
-      ty += cos(t * 1.6 * s + this.phase) * (3 * s);
+      tx += sin(t * 1.6 * s + this.phase) * (3 * s * om);
+      ty += cos(t * 1.6 * s + this.phase) * (3 * s * om);
     } else if (cfg.idleMode === 'spin') {
       this.angle += 0.04 * s;
-      tx += cos(this.angle + this.phase) * 5;
-      ty += sin(this.angle + this.phase) * 5;
+      tx += cos(this.angle + this.phase) * (5 * om);
+      ty += sin(this.angle + this.phase) * (5 * om);
     } else if (cfg.idleMode === 'edge') {
       this.angle += 0.03 * s;
-      tx += cos(this.angle + this.phase) * 8;
-      ty += sin(this.angle + this.phase) * 5;
+      tx += cos(this.angle + this.phase) * (8 * om);
+      ty += sin(this.angle + this.phase) * (5 * om);
     }
     // flash: 位置不动
     const dx = tx - this.pos.x;
@@ -406,11 +412,12 @@ document.querySelectorAll('.control-panel, .bottom-links, .toggle-btn, .bottom-e
 });
 
 // ── 控件 ──
-const sliderIds = ['fontSize', 'count', 'size', 'speed'];
+const sliderIds = ['fontSize', 'count', 'size', 'speed', 'cohesion'];
 function fmtVal(id, v) {
   if (id === 'fontSize' || id === 'count' || id === 'trailLen') return v;
   if (id === 'size') return v.toFixed(1);
   if (id === 'speed') return v.toFixed(1) + 'x';
+  if (id === 'cohesion') return Math.round(v * 100) + '%';
   return v.toFixed(3);
 }
 sliderIds.forEach(id => {
